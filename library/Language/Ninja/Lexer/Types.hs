@@ -92,6 +92,7 @@ import           Data.ByteString        (ByteString)
 import           Data.Text              (Text)
 import qualified Data.Text              as Text
 import qualified Data.Text.Encoding     as Text
+import           Data.Void              (Void)
 
 import           Flow                   ((.>), (|>))
 
@@ -118,7 +119,7 @@ import qualified Language.Ninja.Misc    as Misc
 -- | A @megaparsec@ parser.
 --
 --   @since 0.1.0
-type Parser m a = M.ParsecT M.Dec Text m a
+type Parser m a = M.ParsecT Void Text m a
 
 -- | The type of annotations returned by the lexer.
 --
@@ -136,7 +137,7 @@ class (Monad m) => PositionParsing m where
 -- | Instance for 'M.ParsecT' from @megaparsec@.
 --
 --   @since 0.1.0
-instance PositionParsing (M.ParsecT M.Dec Text m) where
+instance PositionParsing (M.ParsecT Void Text m) where
   getPosition = convert <$> M.getPosition
     where
       convert :: M.SourcePos -> Misc.Position

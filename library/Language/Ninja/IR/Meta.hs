@@ -62,6 +62,8 @@ import qualified Control.Lens             as Lens
 
 import           Flow                     ((.>), (|>))
 
+import           Data.Void                (Void)
+
 --------------------------------------------------------------------------------
 
 -- | Ninja top-level metadata, as documented
@@ -159,7 +161,7 @@ instance ( Monad m
 -- This function converts a @megaparsec@ parser to an @aeson@ parser.
 -- Mainly, it handles converting the error output from @megaparsec@ to a
 -- string that is appropriate for 'fail'.
-megaparsecToAeson :: Mega.Parsec Mega.Dec Text t
+megaparsecToAeson :: Mega.Parsec Void Text t
                   -> (Text -> Aeson.Parser t)
 megaparsecToAeson parser text = case Mega.runParser parser "" text of
                                   Left  e -> fail (Mega.parseErrorPretty e)

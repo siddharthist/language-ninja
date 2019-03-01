@@ -63,6 +63,8 @@ import           Data.Foldable             (toList)
 
 import           Flow                      ((|>))
 
+import           Data.Void                 (Void)
+
 --------------------------------------------------------------------------------
 
 -- | The type of errors encountered during parsing.
@@ -92,7 +94,7 @@ data ParseError
   | -- | Any other lexer error.
     --
     --   @since 0.1.0
-    LexParsecError         !(M.ParseError Char M.Dec)
+    LexParsecError         !(M.ParseError Char Void)
   | -- | @Could not parse depth field in pool, got: <text>@
     --
     --   @since 0.1.0
@@ -145,7 +147,7 @@ throwLexUnexpectedSeparator c = throwParseError (LexUnexpectedSeparator c)
 --
 --   @since 0.1.0
 throwLexParsecError :: (MonadError ParseError m)
-                    => M.ParseError Char M.Dec -> m a
+                    => M.ParseError Char Void -> m a
 throwLexParsecError pe = throwParseError (LexParsecError pe)
 
 -- | Throw a 'ParseBadDepthField' error.
@@ -180,7 +182,7 @@ instance Aeson.ToJSON ParseError where
       go (ParseBadDepthField t)     = obj "parse-bad-depth-field"    t
       go (ParseUnexpectedBinding t) = obj "parse-unexpected-binding" t
 
-      peJ :: M.ParseError Char M.Dec -> Aeson.Value
+      peJ :: M.ParseError Char Void -> Aeson.Value
       peJ (decomposePE -> (pos, custom, unexpected, expected))
         = [ "pos"        .= (posJ     <$> pos)
           , "unexpected" .= (errItemJ <$> unexpected)
@@ -188,8 +190,8 @@ instance Aeson.ToJSON ParseError where
           , "custom"     .= (decJ     <$> custom)
           ] |> Aeson.object
 
-      decomposePE :: M.ParseError Char M.Dec
-                  -> ( [M.SourcePos], [M.Dec]
+      decomposePE :: M.ParseError Char Void
+                  -> ( [M.SourcePos], [Void]
                      , [M.ErrorItem Char], [M.ErrorItem Char] )
       decomposePE (M.ParseError {..})
         = ( toList errorPos, toList errorCustom
@@ -206,10 +208,10 @@ instance Aeson.ToJSON ParseError where
       errItemJ (M.Label  xs) = Aeson.toJSON (toList xs)
       errItemJ M.EndOfInput  = "eof"
 
-      decJ :: M.Dec -> Aeson.Value
-      decJ (M.DecFail message)        = [ "message"  .= message
+      decJ :: Void -> Aeson.Value
+      decJ (VoidFail message)        = [ "message"  .= message
                                         ] |> Aeson.object |> obj "fail"
-      decJ (M.DecIndentation ord x y) = [ "ordering" .= ord
+      decJ (VoidIndentation ord x y) = [ "ordering" .= ord
                                         , "start"    .= M.unPos x
                                         , "end"      .= M.unPos y
                                         ] |> Aeson.object |> obj "indentation"
