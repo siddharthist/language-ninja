@@ -112,7 +112,8 @@ import           Data.Maybe                 (catMaybes, fromMaybe)
 import           Flow                       ((.>), (|>))
 
 import qualified Text.Megaparsec            as M
-import qualified Text.Megaparsec.Lexer      as M.Lexer
+import qualified Text.Megaparsec.Char       as M
+import qualified Text.Megaparsec.Char.Lexer as M.Lexer
 
 import qualified Language.Ninja.AST         as AST
 import qualified Language.Ninja.Errors      as Errors
@@ -300,7 +301,7 @@ equationP = debugP "equationP" $ do
 
 nameP :: Lexer.Parser m (Lexer.LName Lexer.Ann)
 nameP = Lexer.spanned varDotP
-        |> fmap (second (Text.pack .> Text.encodeUtf8))
+        |> fmap (second (Text.encodeUtf8))
         |> fmap (uncurry Lexer.MkLName)
         |> M.Lexer.lexeme spaceP
         |> debugP "nameP"
@@ -359,25 +360,27 @@ dollarP = debugP "dollarP"
                , makeLit (M.string " ")
                , makeLit (M.string ":")
                , makeLit ((M.eol *> M.many M.separatorChar *> pure ""))
-               , makeVar ((M.char '{' *> varDotP <* M.char '}'))
+               -- , makeVar ((M.char '{' *> varDotP <* M.char '}'))
                , makeVar varP
                ] |> asum))
   where
-    makeLit :: Lexer.Parser m String -> Lexer.Parser m (AST.Expr Lexer.Ann)
-    makeLit p = Lexer.spanned p |> fmap (second Text.pack .> uncurry AST.Lit)
+    makeLit :: Lexer.Parser m (M.Tokens Text) -> Lexer.Parser m (AST.Expr Lexer.Ann)
+    makeLit p = Lexer.spanned p |> fmap (uncurry AST.Lit)
 
-    makeVar :: Lexer.Parser m String -> Lexer.Parser m (AST.Expr Lexer.Ann)
-    makeVar p = Lexer.spanned p |> fmap (second Text.pack .> uncurry AST.Var)
+    makeVar :: Lexer.Parser m (M.Tokens Text) -> Lexer.Parser m (AST.Expr Lexer.Ann)
+    makeVar p = Lexer.spanned p |> fmap (uncurry AST.Var)
 
-varDotP :: Lexer.Parser m String
-varDotP = M.some (M.alphaNumChar <|> M.oneOf ['/', '-', '_', '.'])
-          |> debugP "varDotP"
+varDotP :: Lexer.Parser m Text
+varDotP = Text.pack <$>
+  M.some (M.alphaNumChar <|> M.oneOf ['/', '-', '_', '.'])
+  |> debugP "varDotP"
 
-varP :: Lexer.Parser m String
-varP = M.some (M.alphaNumChar <|> M.oneOf ['/', '-', '_'])
-       |> debugP "varP"
+varP :: Lexer.Parser m Text
+varP = Text.pack <$>
+  M.some (M.alphaNumChar <|> M.oneOf ['/', '-', '_'])
+  |> debugP "varP"
 
-symbolP :: String -> Lexer.Parser m String
+symbolP :: Text -> Lexer.Parser m Text
 symbolP = M.Lexer.symbol spaceP
 
 spaceP :: Lexer.Parser m ()

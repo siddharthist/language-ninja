@@ -77,6 +77,7 @@ import           Control.Monad.Error.Class (MonadError (throwError))
 import           GHC.Generics              (Generic)
 
 import           Data.Text                 (Text)
+import           Data.Void                 (Void, absurd)
 
 import           Data.Aeson                ((.=))
 import qualified Data.Aeson                as Aeson
@@ -209,20 +210,25 @@ instance Aeson.ToJSON CompileMetaError where
 
       -- TODO: deduplicate against the implementation in Errors.Parser
 
-      peJ :: M.ParseError Char M.Dec -> Aeson.Value
-      peJ (decomposePE -> (pos, custom, unexpected, expected))
-        = [ "pos"        .= (posJ     <$> pos)
-          , "unexpected" .= (errItemJ <$> unexpected)
-          , "expected"   .= (errItemJ <$> expected)
-          , "custom"     .= (decJ     <$> custom)
+      peJ :: M.ParseError (M.Token Text) Void -> Aeson.Value
+      peJ (M.TrivialError pos unexpected expected)
+        = [ "pos"        .= (posJ     <$> toList pos)
+          , "unexpected" .= (errItemJ <$> toList unexpected)
+          , "expected"   .= (errItemJ <$> toList expected)
+          ] |> Aeson.object
+      peJ (M.FancyError pos fancy)
+        = [ "pos"        .= (posJ     <$> toList pos)
+          , "fancy"      .= (fancyJ   <$> toList fancy)
           ] |> Aeson.object
 
-      decomposePE :: M.ParseError Char M.Dec
-                  -> ( [M.SourcePos], [M.Dec]
-                     , [M.ErrorItem Char], [M.ErrorItem Char] )
-      decomposePE (M.ParseError {..})
-        = ( toList errorPos, toList errorCustom
-          , toList errorUnexpected, toList errorExpected )
+      fancyJ :: M.ErrorFancy Void -> Aeson.Value
+      fancyJ (M.ErrorFail message) = [ "message"  .= message
+                                     ] |> Aeson.object |> obj "fail"
+      fancyJ (M.ErrorIndentation ord x y) = [ "ordering" .= ord
+                                            , "start"    .= M.unPos x
+                                            , "end"      .= M.unPos y
+                                            ] |> Aeson.object |> obj "indentation"
+      fancyJ (M.ErrorCustom custom) = absurd custom
 
       posJ :: M.SourcePos -> Aeson.Value
       posJ (M.SourcePos {..}) = [ "name"   .= sourceName
@@ -234,14 +240,6 @@ instance Aeson.ToJSON CompileMetaError where
       errItemJ (M.Tokens xs) = Aeson.toJSON (toList xs)
       errItemJ (M.Label  xs) = Aeson.toJSON (toList xs)
       errItemJ M.EndOfInput  = "eof"
-
-      decJ :: M.Dec -> Aeson.Value
-      decJ (M.DecFail message)        = [ "message"  .= message
-                                        ] |> Aeson.object |> obj "fail"
-      decJ (M.DecIndentation ord x y) = [ "ordering" .= ord
-                                        , "start"    .= M.unPos x
-                                        , "end"      .= M.unPos y
-                                        ] |> Aeson.object |> obj "indentation"
 
       obj :: (Aeson.ToJSON x) => Text -> x -> Aeson.Value
       obj tag value = Aeson.object ["tag" .= tag, "value" .= value]
