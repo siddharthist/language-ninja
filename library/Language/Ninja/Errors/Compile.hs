@@ -76,6 +76,7 @@ import           Control.Exception         (Exception)
 import           Control.Monad.Error.Class (MonadError (throwError))
 import           GHC.Generics              (Generic)
 
+import           Data.Maybe                (maybeToList)
 import           Data.Text                 (Text)
 import           Data.Void                 (Void, absurd)
 
@@ -205,21 +206,28 @@ throwVersionParseFailure pe = throwCompileMetaError (VersionParseFailure pe)
 instance Aeson.ToJSON CompileMetaError where
   toJSON = go
     where
+      go :: CompileMetaError -> Aeson.Value
       go (GenericCompileMetaError t) = obj "generic-compile-meta-error" t
-      go (VersionParseFailure     e) = obj "version-parse-failure"      (peJ e)
+      go (VersionParseFailure     e) =
+        obj "version-parse-failure" $
+          ([ "pos"   .= posJ (M.pstateSourcePos (M.bundlePosState e))
+          , "errors" .= (peJ <$> toList (M.bundleErrors e))
+          ] |> Aeson.object)
 
       -- TODO: deduplicate against the implementation in Errors.Parser
 
-      peJ :: M.ParseError (M.Token Text) Void -> Aeson.Value
-      peJ (M.TrivialError pos unexpected expected)
-        = [ "pos"        .= (posJ     <$> toList pos)
-          , "unexpected" .= (errItemJ <$> toList unexpected)
-          , "expected"   .= (errItemJ <$> toList expected)
+      peJ :: M.ParseError Text Void -> Aeson.Value
+      peJ (M.TrivialError offset unexpected expected)
+        = maybeToList (fmap (\un -> "unexpected" .= errItemJ un) unexpected)
+          ++
+          [ "offset"    .= offset
+          , "expected"  .= (errItemJ <$> toList expected)
           ] |> Aeson.object
-      peJ (M.FancyError pos fancy)
-        = [ "pos"        .= (posJ     <$> toList pos)
+      peJ (M.FancyError offset fancy)
+        = [ "offset"     .= offset
           , "fancy"      .= (fancyJ   <$> toList fancy)
           ] |> Aeson.object
+
 
       fancyJ :: M.ErrorFancy Void -> Aeson.Value
       fancyJ (M.ErrorFail message) = [ "message"  .= message

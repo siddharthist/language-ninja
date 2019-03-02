@@ -74,9 +74,10 @@ import qualified Test.Tasty.Runners.Html    as Test
 import qualified Test.Tasty.QuickCheck      as Test.QC
 import qualified Test.Tasty.SmallCheck      as Test.SC
 
-import qualified Test.Tasty.Lens.Iso        as Test.Iso
-import qualified Test.Tasty.Lens.Lens       as Test.Lens
-import qualified Test.Tasty.Lens.Prism      as Test.Prism
+-- tasty-lens is not GHC 8.6-ready: https://github.com/jdnavarro/tasty-lens/issues/3
+-- import qualified Test.Tasty.Lens.Iso        as Test.Iso
+-- import qualified Test.Tasty.Lens.Lens       as Test.Lens
+-- import qualified Test.Tasty.Lens.Prism      as Test.Prism
 
 import           Test.QuickCheck            ((===))
 import qualified Test.QuickCheck            as QC
@@ -341,6 +342,7 @@ aesonTests
     typeTimeout :: Test.Timeout
     typeTimeout = Test.mkTimeout 20000000 -- 20 seconds
 
+{-
 opticsTests :: TestTree
 opticsTests
   = Test.testGroup "optics"
@@ -540,6 +542,7 @@ opticsTests
 
     typeTimeout :: Test.Timeout
     typeTimeout = Test.mkTimeout 20000000 -- 20 seconds
+-}
 
 ingredients :: IO [Test.Ingredient]
 ingredients = [ [Test.htmlRunner]
@@ -558,7 +561,7 @@ testTree = do
               [ Test.testGroup "golden"
                  (fmap (uncurry ninjaTests) (zip testFiles ninjas))
               , aesonTests
-              , opticsTests
+              -- , opticsTests
               , haddockTests
               ]
   pure tests

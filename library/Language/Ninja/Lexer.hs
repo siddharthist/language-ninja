@@ -174,8 +174,8 @@ lexBS = lexBSWithPath Nothing
 --   @since 0.1.0
 lexTextWithPath :: (MonadError Errors.ParseError m)
                 => Maybe Misc.Path -> Text -> m [Lexer.Lexeme Lexer.Ann]
-lexTextWithPath mp x = M.runParserT lexemesP file x
-                       >>= either Errors.throwLexParsecError pure
+lexTextWithPath mp x =
+  M.runParserT lexemesP file x >>= either Errors.throwLexParsecError pure
   where
     file = fromMaybe "" (Lens.view Misc.pathString <$> mp)
 

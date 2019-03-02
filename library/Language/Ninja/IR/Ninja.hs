@@ -66,6 +66,7 @@ import           GHC.Generics             (Generic)
 import qualified Test.SmallCheck.Series   as SC
 
 import           GHC.Exts                 (Constraint)
+import           Data.Kind                (Type)
 
 import           Language.Ninja.IR.Build  (Build)
 import           Language.Ninja.IR.Meta   (Meta)
@@ -193,7 +194,7 @@ instance (Monad m, NinjaConstraint (SC.CoSerial m)) => SC.CoSerial m Ninja
 --   computed for a 'Ninja'.
 --
 --   @since 0.1.0
-type NinjaConstraint (c :: * -> Constraint)
+type NinjaConstraint (c :: Type -> Constraint)
   = ( c Text
     , c Ver.Version
     , c (HashMap Target (HashSet Target))

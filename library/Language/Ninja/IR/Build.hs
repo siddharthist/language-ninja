@@ -59,6 +59,7 @@ import           GHC.Generics             (Generic)
 import qualified Test.SmallCheck.Series   as SC
 
 import           GHC.Exts                 (Constraint)
+import           Data.Kind                (Type)
 
 import           Language.Ninja.IR.Rule   (Rule)
 import           Language.Ninja.IR.Target (Dependency, Output)
@@ -158,7 +159,7 @@ instance (Monad m, BuildConstraint (SC.CoSerial m)) => SC.CoSerial m Build
 --   computed for a 'Build'.
 --
 --   @since 0.1.0
-type BuildConstraint (c :: * -> Constraint)
+type BuildConstraint (c :: Type -> Constraint)
   = ( c Text
     , c (HashSet Output)
     , c (HashSet Dependency)

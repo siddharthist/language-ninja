@@ -11,15 +11,15 @@
 --     modification, are permitted provided that the following conditions are
 --     met:
 --
---         * Redistributions of source code must retain the above copyright
+--         Type Redistributions of source code must retain the above copyright
 --           notice, this list of conditions and the following disclaimer.
 --
---         * Redistributions in binary form must reproduce the above
+--         Type Redistributions in binary form must reproduce the above
 --           copyright notice, this list of conditions and the following
 --           disclaimer in the documentation and/or other materials provided
 --           with the distribution.
 --
---         * Neither the name of Neil Mitchell nor the names of other
+--         Type Neither the name of Neil Mitchell nor the names of other
 --           contributors may be used to endorse or promote products derived
 --           from this software without specific prior written permission.
 --
@@ -61,10 +61,10 @@
 --
 --   @since 0.1.0
 module Language.Ninja.Lexer.Types
-  ( -- * Type aliases
+  ( -- Type Type aliases
     Parser, Ann
 
-    -- * @Lexeme@ and friends
+    -- Type @Lexeme@ and friends
   , Lexeme (..)
   , LName  (..)
   , LFile  (..)
@@ -77,7 +77,7 @@ module Language.Ninja.Lexer.Types
   , LBindConstraint
   , LBuildConstraint
 
-    -- * @PositionParsing@
+    -- Type @PositionParsing@
   , PositionParsing (..)
   , spanned
   ) where
@@ -110,6 +110,7 @@ import           Test.SmallCheck.Series ((<~>))
 import qualified Test.SmallCheck.Series as SC
 
 import           GHC.Exts               (Constraint)
+import           Data.Kind              (Type)
 
 import qualified Language.Ninja.AST     as AST
 import qualified Language.Ninja.Misc    as Misc
@@ -138,17 +139,12 @@ class (Monad m) => PositionParsing m where
 --
 --   @since 0.1.0
 instance PositionParsing (M.ParsecT Void Text m) where
-  getPosition = convert <$> M.getPosition
+  getPosition = convert <$> M.getSourcePos
     where
       convert :: M.SourcePos -> Misc.Position
       convert (M.SourcePos fp line column)
         = let path = Lens.view (Lens.from Misc.pathString) fp
-          in Misc.makePosition (Just path) (toLine line, toColumn column)
-
-      toLine   :: M.Pos -> Misc.Line
-      toColumn :: M.Pos -> Misc.Column
-      toLine   = M.unPos .> fromIntegral
-      toColumn = M.unPos .> fromIntegral
+          in Misc.makePosition (Just path) (M.unPos line, M.unPos column)
 
 -- | Surround a section of parsers in 'getPosition' calls and return the
 --   associated 'Misc.Spans'. Note that if a call of this function wraps over
@@ -294,7 +290,7 @@ instance ( Monad m, LexemeConstraint (SC.CoSerial m) ann
 --   computed for an 'Lexeme'.
 --
 --   @since 0.1.0
-type LexemeConstraint (c :: * -> Constraint) (ann :: *)
+type LexemeConstraint (c :: Type -> Constraint) (ann :: Type)
   = ( LBindConstraint  c ann
     , LFileConstraint  c ann
     , LBuildConstraint c ann
@@ -368,7 +364,7 @@ instance ( Monad m, LNameConstraint (SC.CoSerial m) ann
 --   computed for an 'LName'.
 --
 --   @since 0.1.0
-type LNameConstraint (c :: * -> Constraint) (ann :: *) = (c Text, c ann)
+type LNameConstraint (c :: Type -> Constraint) (ann :: Type) = (c Text, c ann)
 
 --------------------------------------------------------------------------------
 
@@ -423,7 +419,7 @@ instance ( Monad m, LFileConstraint (SC.CoSerial m) ann
 --   computed for an 'LFile'.
 --
 --   @since 0.1.0
-type LFileConstraint (c :: * -> Constraint) (ann :: *) = (c Text, c ann)
+type LFileConstraint (c :: Type -> Constraint) (ann :: Type) = (c Text, c ann)
 
 --------------------------------------------------------------------------------
 
@@ -484,7 +480,7 @@ instance ( Monad m, LBindConstraint (SC.CoSerial m) ann
 --   computed for an 'LBind'.
 --
 --   @since 0.1.0
-type LBindConstraint (c :: * -> Constraint) (ann :: *) = (c Text, c ann)
+type LBindConstraint (c :: Type -> Constraint) (ann :: Type) = (c Text, c ann)
 
 --------------------------------------------------------------------------------
 
@@ -581,6 +577,6 @@ instance ( Monad m, LBuildConstraint (SC.CoSerial m) ann
 --   computed for an 'LBuild'.
 --
 --   @since 0.1.0
-type LBuildConstraint (c :: * -> Constraint) (ann :: *) = (c Text, c ann)
+type LBuildConstraint (c :: Type -> Constraint) (ann :: Type) = (c Text, c ann)
 
 --------------------------------------------------------------------------------

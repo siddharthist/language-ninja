@@ -164,7 +164,7 @@ instance ( Monad m
 megaparsecToAeson :: Mega.Parsec Void Text t
                   -> (Text -> Aeson.Parser t)
 megaparsecToAeson parser text = case Mega.runParser parser "" text of
-                                  Left  e -> fail (Mega.parseErrorPretty e)
+                                  Left  e -> fail (Mega.errorBundlePretty e)
                                   Right x -> pure x
 
 --------------------------------------------------------------------------------

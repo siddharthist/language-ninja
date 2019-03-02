@@ -52,6 +52,7 @@ import           Control.Exception         (Exception)
 import           Control.Monad.Error.Class (MonadError (throwError))
 import           GHC.Generics              (Generic)
 
+import           Data.Maybe                (maybeToList)
 import           Data.Text                 (Text)
 
 import           Data.Aeson                ((.=))
@@ -94,7 +95,7 @@ data ParseError
   | -- | Any other lexer error.
     --
     --   @since 0.1.0
-    LexParsecError         !(M.ParseError Char Void)
+    LexParsecError         !(M.ParseErrorBundle Text Void)
   | -- | @Could not parse depth field in pool, got: <text>@
     --
     --   @since 0.1.0
@@ -147,7 +148,7 @@ throwLexUnexpectedSeparator c = throwParseError (LexUnexpectedSeparator c)
 --
 --   @since 0.1.0
 throwLexParsecError :: (MonadError ParseError m)
-                    => M.ParseError Char Void -> m a
+                    => M.ParseErrorBundle Text Void -> m a
 throwLexParsecError pe = throwParseError (LexParsecError pe)
 
 -- | Throw a 'ParseBadDepthField' error.
@@ -178,18 +179,23 @@ instance Aeson.ToJSON ParseError where
       go LexExpectedColon           = obj "lex-expected-colon"       nullJ
       go LexUnexpectedDollar        = obj "lex-unexpected-dollar"    nullJ
       go (LexUnexpectedSeparator c) = obj "lex-unexpected-separator" c
-      go (LexParsecError pe)        = obj "lex-parsec-error"         (peJ pe)
       go (ParseBadDepthField t)     = obj "parse-bad-depth-field"    t
       go (ParseUnexpectedBinding t) = obj "parse-unexpected-binding" t
+      go (LexParsecError pe)        =
+        obj "lex-parsec-error" $
+          ([ "pos"   .= posJ (M.pstateSourcePos (M.bundlePosState pe))
+          , "errors" .= (peJ <$> toList (M.bundleErrors pe))
+          ] |> Aeson.object)
 
-      peJ :: M.ParseError (M.Token Text) Void -> Aeson.Value
-      peJ (M.TrivialError pos unexpected expected)
-        = [ "pos"        .= (posJ     <$> toList pos)
-          , "unexpected" .= (errItemJ <$> toList unexpected)
-          , "expected"   .= (errItemJ <$> toList expected)
+      peJ :: M.ParseError Text Void -> Aeson.Value
+      peJ (M.TrivialError offset unexpected expected)
+        = maybeToList (fmap (\un -> "unexpected" .= errItemJ un) unexpected)
+          ++
+          [ "offset"    .= offset
+          , "expected"  .= (errItemJ <$> toList expected)
           ] |> Aeson.object
-      peJ (M.FancyError pos fancy)
-        = [ "pos"        .= (posJ     <$> toList pos)
+      peJ (M.FancyError offset fancy)
+        = [ "offset"     .= offset
           , "fancy"      .= (fancyJ   <$> toList fancy)
           ] |> Aeson.object
 
@@ -208,7 +214,7 @@ instance Aeson.ToJSON ParseError where
                                 , "column" .= M.unPos sourceColumn
                                 ] |> Aeson.object
 
-      errItemJ :: M.ErrorItem Char -> Aeson.Value
+      errItemJ :: M.ErrorItem (M.Token Text) -> Aeson.Value
       errItemJ (M.Tokens xs) = Aeson.toJSON (toList xs)
       errItemJ (M.Label  xs) = Aeson.toJSON (toList xs)
       errItemJ M.EndOfInput  = "eof"
