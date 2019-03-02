@@ -229,7 +229,7 @@ executable ninja-lex
                         , flow                        >= 1.0   && < 1.1
                         , lens                        >= 4.15  && < 4.18
                         , mtl                         >= 2.2   && < 2.3
-                        , optparse-generic            >= 1.1   && < 1.4
+                        , optparse-generic            >= 1.3   && < 1.4
                         -- , prettyprinter               >= 1.1   && < 1.2
                         -- , prettyprinter-ansi-terminal >= 1.1   && < 1.2
                         , text                        >= 1.2   && < 1.3
@@ -268,7 +268,7 @@ executable ninja-parse
                         , flow                        >= 1.0   && < 1.1
                         , lens                        >= 4.15  && < 4.18
                         , mtl                         >= 2.2   && < 2.3
-                        , optparse-generic            >= 1.1   && < 1.4
+                        , optparse-generic            >= 1.3   && < 1.4
                         -- , prettyprinter               >= 1.1   && < 1.2
                         -- , prettyprinter-ansi-terminal >= 1.1   && < 1.2
                         , text                        >= 1.2   && < 1.3
@@ -307,7 +307,7 @@ executable ninja-compile
                         , flow                        >= 1.0   && < 1.1
                         , lens                        >= 4.15  && < 4.18
                         , mtl                         >= 2.2   && < 2.3
-                        , optparse-generic            >= 1.1   && < 1.4
+                        , optparse-generic            >= 1.3   && < 1.4
                         -- , prettyprinter               >= 1.1   && < 1.2
                         -- , prettyprinter-ansi-terminal >= 1.1   && < 1.2
                         , text                        >= 1.2   && < 1.3

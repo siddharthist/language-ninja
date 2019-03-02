@@ -47,7 +47,7 @@ import qualified Options.Generic          as Opt
 import           GHC.Generics             (Generic)
 
 import           Data.Char                (toLower)
-import           Data.Maybe               (fromMaybe)
+import           Data.Maybe               (fromMaybe, listToMaybe)
 import           Data.Monoid              ((<>))
 
 import           Data.Version             (showVersion)
@@ -83,11 +83,11 @@ instance Opt.ParseField Path where
   parseField h m = Lens.view (Lens.from pathFP) <$> Opt.parseField h m
 
 composeModifiers :: Opt.Modifiers -> Opt.Modifiers -> Opt.Modifiers
-composeModifiers (Opt.Modifiers fnX cnX) (Opt.Modifiers fnY cnY)
-  = Opt.Modifiers (fnX .> fnY) (cnX .> cnY)
+composeModifiers (Opt.Modifiers fnX cnX snX) (Opt.Modifiers fnY cnY _snY)
+  = Opt.Modifiers (fnX .> fnY) (cnX .> cnY) snX -- TODO combine with snY
 
 removePrefixModifier :: Text -> Opt.Modifiers
-removePrefixModifier prefix = Opt.Modifiers removeFN id
+removePrefixModifier prefix = Opt.Modifiers removeFN id listToMaybe
   where
     removeFN :: String -> String
     removeFN str = fromMaybe str $ do
